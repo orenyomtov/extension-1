@@ -4,7 +4,8 @@ import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
 import { arrayify } from "ethers/lib/utils"
 import { Wallet } from "ethers"
-import { computeAllInputs } from "plume-sig"
+import plumeWasmString from "../../static/plume-wasm.json"
+import init, { computeAllInputs } from "plume-wasm"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import {
@@ -1064,16 +1065,21 @@ export default class InternalSignerService extends BaseService<Events> {
         privateKey = privateKey.substring(2)
       }
 
-      const { plume, s, publicKey, c, gPowR, hashMPKPowR } =
-        await computeAllInputs(message, privateKey, undefined, version)
+      await init(plumeWasmString)
+      const { plume, s, publicKey, c, gPowR, hashMPkPowR } = computeAllInputs(
+        message,
+        privateKey,
+        "undefined",
+        version,
+      )
 
       return {
-        plume: `0x${plume.toHex(true)}`,
-        publicKey: `0x${Buffer.from(publicKey).toString("hex")}`,
-        hashMPKPowR: `0x${hashMPKPowR.toHex(true)}`,
-        gPowR: `0x${gPowR.toHex(true)}`,
-        c: `0x${c}`,
-        s: `0x${s}`,
+        plume: plume,
+        publicKey: publicKey,
+        hashMPKPowR: hashMPkPowR,
+        gPowR: gPowR,
+        c: c,
+        s: s,
       }
     } catch (error) {
       throw new Error("Signing data failed")
